@@ -21,6 +21,16 @@ Simple GUI for backing up Obsidian vault configured for storing key "things" rel
 
 ![alt text](Screenshots/V1/5.png)
 
+## Versions
+
+### V1
+
+Constructs local backups
+
+## V2
+
+
+
 
 ## Use Case Statement
 
