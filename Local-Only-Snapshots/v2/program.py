@@ -9,6 +9,14 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import QThread, pyqtSignal, Qt
 from PyQt5.QtGui import QFont, QPalette, QColor
 
+def get_config_path():
+    if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        return os.path.join(os.path.dirname(sys.executable), 'config.json')
+    else:
+        # Running as script
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+
 class BackupThread(QThread):
     update_signal = pyqtSignal(str)
     finished_signal = pyqtSignal(bool)
@@ -22,13 +30,11 @@ class BackupThread(QThread):
 
     def run(self):
         try:
-            # Create snapshot folder
             snapshot_name = datetime.now().strftime("%d%m%y_vault_snapshot")
             snapshot_path = os.path.join(self.snapshot_folder, snapshot_name)
             os.makedirs(snapshot_path, exist_ok=True)
             self.update_signal.emit(f"Created snapshot folder: {snapshot_path}")
 
-            # Create archives
             self.create_archive(self.agent_folder, os.path.join(snapshot_path, "agents.tar.gz"), "agents")
             self.create_archive(self.prompt_folder, os.path.join(snapshot_path, "prompts.tar.gz"), "prompts")
             self.create_archive(self.output_folder, os.path.join(snapshot_path, "outputs.tar.gz"), "outputs")
@@ -48,6 +54,7 @@ class BackupThread(QThread):
 class LLMVaultBackupUtility(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.config_path = get_config_path()
         self.initUI()
         self.load_config()
 
@@ -55,7 +62,6 @@ class LLMVaultBackupUtility(QMainWindow):
         self.setWindowTitle('LLM Vault Backup Utility')
         self.setGeometry(100, 100, 600, 400)
 
-        # Set the color scheme
         palette = QPalette()
         palette.setColor(QPalette.Window, QColor(53, 53, 53))
         palette.setColor(QPalette.WindowText, Qt.white)
@@ -76,13 +82,11 @@ class LLMVaultBackupUtility(QMainWindow):
         self.setCentralWidget(central_widget)
         layout = QVBoxLayout(central_widget)
 
-        # Folder selection
         self.create_folder_input(layout, "Agent Folder:", "agent_folder")
         self.create_folder_input(layout, "Prompt Folder:", "prompt_folder")
         self.create_folder_input(layout, "Output Folder:", "output_folder")
         self.create_folder_input(layout, "Snapshot Folder:", "snapshot_folder")
 
-        # Create snapshot and Save Config buttons
         button_layout = QHBoxLayout()
         self.create_snapshot_btn = QPushButton('Create Snapshot')
         self.create_snapshot_btn.clicked.connect(self.create_snapshot)
@@ -123,10 +127,8 @@ class LLMVaultBackupUtility(QMainWindow):
             }
         """)
         button_layout.addWidget(self.save_config_btn)
-
         layout.addLayout(button_layout)
 
-        # Terminal output
         self.terminal_output = QTextEdit()
         self.terminal_output.setReadOnly(True)
         self.terminal_output.setStyleSheet("""
@@ -141,7 +143,6 @@ class LLMVaultBackupUtility(QMainWindow):
         layout.addWidget(QLabel("Process Output:"))
         layout.addWidget(self.terminal_output)
 
-        # Status bar
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
 
@@ -216,13 +217,13 @@ class LLMVaultBackupUtility(QMainWindow):
             'output_folder': self.output_folder.text(),
             'snapshot_folder': self.snapshot_folder.text()
         }
-        with open('config.json', 'w') as f:
+        with open(self.config_path, 'w') as f:
             json.dump(config, f)
         self.statusBar.showMessage("Configuration saved successfully", 3000)
 
     def load_config(self):
         try:
-            with open('config.json', 'r') as f:
+            with open(self.config_path, 'r') as f:
                 config = json.load(f)
             self.agent_folder.setText(config.get('agent_folder', ''))
             self.prompt_folder.setText(config.get('prompt_folder', ''))
