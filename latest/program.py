@@ -48,7 +48,6 @@ class BackupThread(QThread):
 
             # Upload archives to B2
             self.upload_to_b2(archives, snapshot_name)
-
             self.update_signal.emit("Snapshot creation and upload completed successfully!")
             self.finished_signal.emit(True)
         except Exception as e:
@@ -71,13 +70,11 @@ class BackupThread(QThread):
         except b2.exception.B2Error as e:
             self.update_signal.emit(f"B2 Authentication Error: {str(e)}")
             raise
-
         try:
             bucket = b2_api.get_bucket_by_name(self.b2_bucket_name)
         except b2.exception.B2Error as e:
             self.update_signal.emit(f"B2 Bucket Error: {str(e)}")
             raise
-
         for archive in archives:
             file_name = os.path.basename(archive)
             b2_file_name = f"{self.b2_folder}/{snapshot_name}/{file_name}".lstrip('/')
@@ -115,7 +112,6 @@ class LLMVaultBackupUtility(QWidget):
     def initUI(self):
         self.setWindowTitle('LLM Vault Backup Utility')
         self.setGeometry(100, 100, 600, 600)
-
         layout = QVBoxLayout()
 
         # Local Folder Configuration
